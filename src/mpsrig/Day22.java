@@ -81,8 +81,8 @@ public class Day22 extends Runner.Computation {
                 return new RecursiveCombatGameResult(false, player1Deck);
             }
 
-            int player1Card = player1Deck.removeFirst();
-            int player2Card = player2Deck.removeFirst();
+            var player1Card = player1Deck.removeFirst();
+            var player2Card = player2Deck.removeFirst();
 
             if (player1Card <= player1Deck.size() && player2Card <= player2Deck.size()) {
                 var subResult = recursiveCombatGame(recursionLevel + 1,
@@ -100,7 +100,7 @@ public class Day22 extends Runner.Computation {
                     player1Deck.addLast(player2Card);
                 }
             } else {
-                if (player1Card == player2Card) {
+                if (player1Card.equals(player2Card)) {
                     throw new IllegalStateException();
                 } else if (player1Card > player2Card) {
                     player1Deck.addLast(player1Card);
