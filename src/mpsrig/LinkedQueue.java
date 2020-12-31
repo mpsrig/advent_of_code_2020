@@ -29,8 +29,16 @@ public class LinkedQueue<E> extends AbstractQueue<E> {
     }
 
     @Override
+    public boolean contains(Object o) {
+        @SuppressWarnings("SuspiciousMethodCalls")
+        var result = lookupMap.containsKey(o);
+        return result;
+    }
+
+    @Override
     public boolean offer(E e) {
         Objects.requireNonNull(e);
+        checkDoesNotContain(e);
 
         var newNode = new Node<E>();
         newNode.item = e;
@@ -74,6 +82,7 @@ public class LinkedQueue<E> extends AbstractQueue<E> {
     public void addAfter(E existingElem, E elemToAdd) {
         Objects.requireNonNull(existingElem);
         Objects.requireNonNull(elemToAdd);
+        checkDoesNotContain(elemToAdd);
         var node = Objects.requireNonNull(lookupMap.get(existingElem));
         if (node.next == null) {
             offer(elemToAdd);
@@ -84,6 +93,12 @@ public class LinkedQueue<E> extends AbstractQueue<E> {
             node.next = newNode;
             size++;
             lookupMap.put(newNode.item, newNode);
+        }
+    }
+
+    private void checkDoesNotContain(E e) {
+        if (lookupMap.containsKey(e)) {
+            throw new IllegalArgumentException("Already contains element");
         }
     }
 
