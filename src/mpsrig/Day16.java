@@ -250,13 +250,13 @@ public class Day16 extends Runner.Computation {
                 //
                 // Note: that can cause a cascade reaction where others become 1,
                 // so they must be filtered from others, etc.
-                removeConstraintFromAllOtherIndexes(possibleConstraintsByPosition, i);
+                removeSingleElementFromAllOtherIndexes(possibleConstraintsByPosition, i);
             }
         }
     }
 
 
-    private static void removeConstraintFromAllOtherIndexes(List<Set<FieldConstraints>> possibleConstraintsByPosition, int idx) {
+    public static <E> void removeSingleElementFromAllOtherIndexes(List<Set<E>> possibleConstraintsByPosition, int idx) {
 //        System.err.println("removeConstraintFromAllOtherIndexesImpl");
 
         var positionConstraints = possibleConstraintsByPosition.get(idx);
@@ -281,7 +281,7 @@ public class Day16 extends Runner.Computation {
             jConstraints.remove(c);
             if (jConstraints.size() == 1) {
                 // recurse
-                removeConstraintFromAllOtherIndexes(possibleConstraintsByPosition, j);
+                removeSingleElementFromAllOtherIndexes(possibleConstraintsByPosition, j);
             }
         }
     }
