@@ -11,10 +11,7 @@ public class Day5 extends Runner.Computation {
 
     @Override
     protected void init() {
-        if (input.size() != 1) {
-            throw new IllegalArgumentException();
-        }
-        parsedProgram = Day2.parseProgram(input.get(0));
+        parsedProgram = Day2.parseProgramFromPuzzleInput(input);
     }
 
     private Object compute(Integer... input) {

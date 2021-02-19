@@ -11,6 +11,13 @@ public class Day2 {
         return InputUtils.parseInts(Arrays.asList(program.split(",")));
     }
 
+    public static List<Integer> parseProgramFromPuzzleInput(List<String> input) {
+        if (input.size() != 1) {
+            throw new IllegalArgumentException();
+        }
+        return parseProgram(input.get(0));
+    }
+
     public static String serializeProgram(List<Integer> program) {
         return program.stream().map(Object::toString).collect(Collectors.joining(","));
     }
