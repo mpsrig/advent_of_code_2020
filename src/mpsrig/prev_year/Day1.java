@@ -12,7 +12,7 @@ public class Day1 extends Runner.Computation {
 
     private List<Integer> parsedInput;
 
-    public void init() {
+    protected void init() {
         parsedInput = ListUtils.map(input, Integer::parseInt);
     }
 
