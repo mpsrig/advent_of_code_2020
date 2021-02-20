@@ -43,6 +43,25 @@ public class IntcodeComputer {
         protected abstract boolean performCheck(long x, long y);
     }
 
+    private static class JumpOperation extends Operation {
+        private final boolean jumpOnNonZero;
+
+        protected JumpOperation(boolean jumpOnNonZero) {
+            super(2);
+            this.jumpOnNonZero = jumpOnNonZero;
+        }
+
+        @Override
+        public void execute(List<Param> params, IntcodeComputer computer) {
+            var testVal = params.get(0).read();
+            if ((jumpOnNonZero && testVal != 0) || (!jumpOnNonZero && testVal == 0)) {
+                // upper level will unconditionally add 3 to pc
+                // to compensate for the size of the instruction
+                computer.pc = Math.toIntExact(params.get(1).read()) - 3;
+            }
+        }
+    }
+
     private class MemoryParam implements Param {
         public MemoryParam(int addr) {
             while (addr >= memory.size()) {
@@ -140,6 +159,18 @@ public class IntcodeComputer {
                 return x == y;
             }
         });
+
+        // TERMINATE
+        OPERATIONS_MAP.put(99, new Operation(0) {
+            @Override
+            public void execute(List<Param> params, IntcodeComputer computer) {
+                computer.terminated = true;
+            }
+        });
+
+        // JUMP
+        OPERATIONS_MAP.put(5, new JumpOperation(true));
+        OPERATIONS_MAP.put(6, new JumpOperation(false));
     }
 
     static int[] parseOpcodeModes(int opcode, int numParams) {
@@ -190,31 +221,7 @@ public class IntcodeComputer {
         int opcode = Math.toIntExact(memory.get(pc));
         int opcodeBase = opcode % 100;
 
-        // TERMINATE
-        if (opcodeBase == 99) {
-            terminated = true;
-            return;
-        }
-
-        // JUMP
-        if (opcodeBase == 5 || opcodeBase == 6) {
-            List<Param> params = parseParams(opcode, 2);
-            var testVal = params.get(0).read();
-            if ((opcodeBase == 5 && testVal != 0) || (opcodeBase == 6 && testVal == 0)) {
-                pc = Math.toIntExact(params.get(1).read());
-            } else {
-                pc += 3;
-            }
-            return;
-        }
-
         Operation o = OPERATIONS_MAP.get(opcodeBase);
-//            if (o == null) {
-//                System.err.println(Day2.serializeProgram(memory));
-//                System.err.println(input);
-//                System.err.println(output);
-//                System.err.println(pc);
-//            }
         o.execute(parseParams(opcode, o.getNumParams()), this);
         pc += 1 + o.getNumParams();
     }
