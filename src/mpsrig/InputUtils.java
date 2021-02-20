@@ -10,10 +10,6 @@ public class InputUtils {
     }
 
     public static List<Integer> parseInts(List<String> input) {
-        List<Integer> out = new ArrayList<>(input.size());
-        for (String entry: input) {
-            out.add(Integer.parseInt(entry));
-        }
-        return out;
+        return ListUtils.map(input, Integer::parseInt);
     }
 }
