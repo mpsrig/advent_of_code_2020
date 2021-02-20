@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public class Day7 extends Runner.Computation {
@@ -13,20 +14,20 @@ public class Day7 extends Runner.Computation {
         Runner.run("/prev_year/7.txt", new Day7());
     }
 
-    private List<Integer> parsedProgram = null;
+    private List<Long> parsedProgram = null;
 
     @Override
     protected void init() {
         parsedProgram = Day2.parseProgramFromPuzzleInput(input);
     }
 
-    private int runAmplifierChain(int[] phaseSettings) {
+    private long runAmplifierChain(int[] phaseSettings) {
         if (phaseSettings.length != 5) {
             throw new IllegalArgumentException();
         }
-        int signal = 0;
+        long signal = 0;
         for (var phaseSetting : phaseSettings) {
-            var computer = new IntcodeComputer(parsedProgram, Arrays.asList(phaseSetting, signal));
+            var computer = new IntcodeComputer(parsedProgram, Arrays.asList((long)phaseSetting, signal));
             computer.run();
             var output = computer.getOutput();
             if (output.size() != 1) {
@@ -37,17 +38,17 @@ public class Day7 extends Runner.Computation {
         return signal;
     }
 
-    private int runAmplifierChainPart2(int[] phaseSettings) {
+    private long runAmplifierChainPart2(int[] phaseSettings) {
         if (phaseSettings.length != 5) {
             throw new IllegalArgumentException();
         }
         var amps = new IntcodeComputer[phaseSettings.length];
         for (int i = 0; i < phaseSettings.length; i++) {
-            amps[i] = new IntcodeComputer(parsedProgram, Collections.singletonList(phaseSettings[i]));
+            amps[i] = new IntcodeComputer(parsedProgram, Collections.singletonList((long)phaseSettings[i]));
         }
 
         int currIdx = 0;
-        int value = 0;
+        long value = 0;
         while (true) {
             var a = amps[currIdx];
             a.addInput(value);
@@ -83,14 +84,14 @@ public class Day7 extends Runner.Computation {
 
     @Override
     public Object computePart1() {
-        AtomicInteger maximumOutput = new AtomicInteger();
+        AtomicLong maximumOutput = new AtomicLong();
         permutate(new int[]{0, 1, 2, 3, 4}, 5, x -> maximumOutput.set(Math.max(maximumOutput.get(), runAmplifierChain(x))));
         return maximumOutput.get();
     }
 
     @Override
     public Object computePart2() {
-        AtomicInteger maximumOutput = new AtomicInteger();
+        AtomicLong maximumOutput = new AtomicLong();
         permutate(new int[]{5, 6, 7, 8, 9}, 5, x -> maximumOutput.set(Math.max(maximumOutput.get(), runAmplifierChainPart2(x))));
         return maximumOutput.get();
     }

@@ -7,14 +7,14 @@ import java.util.Collections;
 import java.util.List;
 
 public class Day5 extends Runner.Computation {
-    private List<Integer> parsedProgram = null;
+    private List<Long> parsedProgram = null;
 
     @Override
     protected void init() {
         parsedProgram = Day2.parseProgramFromPuzzleInput(input);
     }
 
-    private Object compute(Integer... input) {
+    private Object compute(Long... input) {
         IntcodeComputer c = new IntcodeComputer(parsedProgram, Arrays.asList(input));
         c.run();
         return c.getOutput();
@@ -22,12 +22,12 @@ public class Day5 extends Runner.Computation {
 
     @Override
     public Object computePart1() {
-        return compute(1);
+        return compute(1L);
     }
 
     @Override
     public Object computePart2() {
-        return compute(5);
+        return compute(5L);
     }
 
     public static void main(String[] args) {

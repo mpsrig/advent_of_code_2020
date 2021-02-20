@@ -4,9 +4,9 @@ import java.util.*;
 
 public class IntcodeComputer {
     private interface Param {
-        int read();
+        long read();
 
-        void write(int value);
+        void write(long value);
     }
 
     private static abstract class Operation {
@@ -20,7 +20,7 @@ public class IntcodeComputer {
             return numParams;
         }
 
-        public abstract void execute(List<Param> params, Queue<Integer> input, List<Integer> output);
+        public abstract void execute(List<Param> params, IntcodeComputer computer);
     }
 
     private static abstract class ArithmeticOperation extends Operation {
@@ -28,53 +28,56 @@ public class IntcodeComputer {
             super(3);
         }
 
-        public void execute(List<Param> params, Queue<Integer> input, List<Integer> output) {
+        public void execute(List<Param> params, IntcodeComputer computer) {
             params.get(2).write(performArithmetic(params.get(0).read(), params.get(1).read()));
         }
 
-        protected abstract int performArithmetic(int x, int y);
+        protected abstract long performArithmetic(long x, long y);
     }
 
     private static abstract class BooleanOperation extends ArithmeticOperation {
-        protected int performArithmetic(int x, int y) {
+        protected long performArithmetic(long x, long y) {
             return performCheck(x, y) ? 1 : 0;
         }
 
-        protected abstract boolean performCheck(int x, int y);
+        protected abstract boolean performCheck(long x, long y);
     }
 
     private class MemoryParam implements Param {
         public MemoryParam(int addr) {
+            while (addr >= memory.size()) {
+                memory.add(0L);
+            }
             this.addr = addr;
         }
 
         private final int addr;
 
         @Override
-        public int read() {
+        public long read() {
             return memory.get(addr);
         }
 
         @Override
-        public void write(int value) {
+        public void write(long value) {
             memory.set(addr, value);
         }
     }
 
     private static class ImmediateParam implements Param {
-        private final int val;
+        private final long val;
 
-        private ImmediateParam(int val) {
+        private ImmediateParam(long val) {
             this.val = val;
         }
 
         @Override
-        public int read() {
+        public long read() {
             return val;
         }
 
         @Override
-        public void write(int value) {
+        public void write(long value) {
             throw new IllegalStateException("Immediate params can never be written");
         }
     }
@@ -85,7 +88,7 @@ public class IntcodeComputer {
         // ADD
         OPERATIONS_MAP.put(1, new ArithmeticOperation() {
             @Override
-            public int performArithmetic(int x, int y) {
+            public long performArithmetic(long x, long y) {
                 return x + y;
             }
         });
@@ -93,7 +96,7 @@ public class IntcodeComputer {
         // MULTIPLY
         OPERATIONS_MAP.put(2, new ArithmeticOperation() {
             @Override
-            public int performArithmetic(int x, int y) {
+            public long performArithmetic(long x, long y) {
                 return x * y;
             }
         });
@@ -101,23 +104,31 @@ public class IntcodeComputer {
         // INPUT
         OPERATIONS_MAP.put(3, new Operation(1) {
             @Override
-            public void execute(List<Param> params, Queue<Integer> input, List<Integer> output) {
-                params.get(0).write(input.remove());
+            public void execute(List<Param> params, IntcodeComputer computer) {
+                params.get(0).write(computer.input.remove());
             }
         });
 
         // OUTPUT
         OPERATIONS_MAP.put(4, new Operation(1) {
             @Override
-            public void execute(List<Param> params, Queue<Integer> input, List<Integer> output) {
-                output.add(params.get(0).read());
+            public void execute(List<Param> params, IntcodeComputer computer) {
+                computer.output.add(params.get(0).read());
+            }
+        });
+
+        // RELATIVE BASE OFFSET
+        OPERATIONS_MAP.put(9, new Operation(1) {
+            @Override
+            public void execute(List<Param> params, IntcodeComputer computer) {
+                computer.relativeBase += params.get(0).read();
             }
         });
 
         // LESS THAN
         OPERATIONS_MAP.put(7, new BooleanOperation() {
             @Override
-            public boolean performCheck(int x, int y) {
+            public boolean performCheck(long x, long y) {
                 return x < y;
             }
         });
@@ -125,7 +136,7 @@ public class IntcodeComputer {
         // EQUAL
         OPERATIONS_MAP.put(8, new BooleanOperation() {
             @Override
-            public boolean performCheck(int x, int y) {
+            public boolean performCheck(long x, long y) {
                 return x == y;
             }
         });
@@ -141,26 +152,27 @@ public class IntcodeComputer {
         return out;
     }
 
-    private final ArrayList<Integer> memory;
-    private final ArrayDeque<Integer> input;
+    private final ArrayList<Long> memory;
+    private final ArrayDeque<Long> input;
     private int pc = 0;
-    private final ArrayList<Integer> output = new ArrayList<>();
+    private final ArrayList<Long> output = new ArrayList<>();
     private boolean terminated = false;
+    private long relativeBase = 0;
 
-    public IntcodeComputer(List<Integer> memory, List<Integer> input) {
+    public IntcodeComputer(List<Long> memory, List<Long> input) {
         this.memory = new ArrayList<>(memory);
         this.input = new ArrayDeque<>(input);
     }
 
-    public List<Integer> getMemory() {
+    public List<Long> getMemory() {
         return Collections.unmodifiableList(memory);
     }
 
-    public List<Integer> getOutput() {
+    public List<Long> getOutput() {
         return Collections.unmodifiableList(output);
     }
 
-    public void addInput(int inputVal) {
+    public void addInput(long inputVal) {
         input.add(inputVal);
     }
 
@@ -175,7 +187,7 @@ public class IntcodeComputer {
             throw new IllegalStateException("Program already terminated!");
         }
 
-        int opcode = memory.get(pc);
+        int opcode = Math.toIntExact(memory.get(pc));
         int opcodeBase = opcode % 100;
 
         // TERMINATE
@@ -187,9 +199,9 @@ public class IntcodeComputer {
         // JUMP
         if (opcodeBase == 5 || opcodeBase == 6) {
             List<Param> params = parseParams(opcode, 2);
-            int testVal = params.get(0).read();
+            var testVal = params.get(0).read();
             if ((opcodeBase == 5 && testVal != 0) || (opcodeBase == 6 && testVal == 0)) {
-                pc = params.get(1).read();
+                pc = Math.toIntExact(params.get(1).read());
             } else {
                 pc += 3;
             }
@@ -203,11 +215,11 @@ public class IntcodeComputer {
 //                System.err.println(output);
 //                System.err.println(pc);
 //            }
-        o.execute(parseParams(opcode, o.getNumParams()), input, output);
+        o.execute(parseParams(opcode, o.getNumParams()), this);
         pc += 1 + o.getNumParams();
     }
 
-    public Integer runUntilOutputAndYield() {
+    public Long runUntilOutputAndYield() {
         var startOutputSize = output.size();
         while (startOutputSize == output.size()) {
             step();
@@ -225,16 +237,17 @@ public class IntcodeComputer {
         int[] modes = parseOpcodeModes(opcode, numParams);
         List<Param> params = new ArrayList<>(modes.length);
         for (int i = 0; i < modes.length; i++) {
-            int paramVal = memory.get(pc + 1 + i);
+            long paramVal = memory.get(pc + 1 + i);
             params.add(makeParam(modes[i], paramVal));
         }
         return params;
     }
 
-    private Param makeParam(int mode, int paramVal) {
+    private Param makeParam(int mode, long paramVal) {
         return switch (mode) {
-            case 0 -> new MemoryParam(paramVal);
+            case 0 -> new MemoryParam(Math.toIntExact(paramVal));
             case 1 -> new ImmediateParam(paramVal);
+            case 2 -> new MemoryParam(Math.toIntExact(paramVal + relativeBase));
             default -> throw new IllegalArgumentException("Unknown param mode " + mode);
         };
     }

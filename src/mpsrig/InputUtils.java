@@ -12,4 +12,8 @@ public class InputUtils {
     public static List<Integer> parseInts(List<String> input) {
         return ListUtils.map(input, Integer::parseInt);
     }
+
+    public static List<Long> parseLongs(List<String> input) {
+        return ListUtils.map(input, Long::parseLong);
+    }
 }

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class Day2Test {
     private void runTest(String input, String expected) {
-        List<Integer> parsedProgram = Day2.parseProgram(input);
+        List<Long> parsedProgram = Day2.parseProgram(input);
 //        Day2.runProgram(parsedProgram);
         IntcodeComputer c = new IntcodeComputer(parsedProgram, Collections.emptyList());
         c.run();
