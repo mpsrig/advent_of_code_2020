@@ -145,6 +145,7 @@ public class IntcodeComputer {
     private final ArrayDeque<Integer> input;
     private int pc = 0;
     private final ArrayList<Integer> output = new ArrayList<>();
+    private boolean terminated = false;
 
     public IntcodeComputer(List<Integer> memory, List<Integer> input) {
         this.memory = new ArrayList<>(memory);
@@ -159,38 +160,65 @@ public class IntcodeComputer {
         return Collections.unmodifiableList(output);
     }
 
+    public void addInput(int inputVal) {
+        input.add(inputVal);
+    }
+
     public void run() {
-        while (true) {
-            int opcode = memory.get(pc);
-            int opcodeBase = opcode % 100;
+        while (!terminated) {
+            step();
+        }
+    }
 
-            // TERMINATE
-            if (opcodeBase == 99) {
-                return;
+    private void step() {
+        if (terminated) {
+            throw new IllegalStateException("Program already terminated!");
+        }
+
+        int opcode = memory.get(pc);
+        int opcodeBase = opcode % 100;
+
+        // TERMINATE
+        if (opcodeBase == 99) {
+            terminated = true;
+            return;
+        }
+
+        // JUMP
+        if (opcodeBase == 5 || opcodeBase == 6) {
+            List<Param> params = parseParams(opcode, 2);
+            int testVal = params.get(0).read();
+            if ((opcodeBase == 5 && testVal != 0) || (opcodeBase == 6 && testVal == 0)) {
+                pc = params.get(1).read();
+            } else {
+                pc += 3;
             }
+            return;
+        }
 
-            // JUMP
-            if (opcodeBase == 5 || opcodeBase == 6) {
-                List<Param> params = parseParams(opcode, 2);
-                int testVal = params.get(0).read();
-                if ((opcodeBase == 5 && testVal != 0) || (opcodeBase == 6 && testVal == 0)) {
-                    pc = params.get(1).read();
-                } else {
-                    pc += 3;
-                }
-                continue;
-            }
-
-            Operation o = OPERATIONS_MAP.get(opcodeBase);
+        Operation o = OPERATIONS_MAP.get(opcodeBase);
 //            if (o == null) {
 //                System.err.println(Day2.serializeProgram(memory));
 //                System.err.println(input);
 //                System.err.println(output);
 //                System.err.println(pc);
 //            }
-            o.execute(parseParams(opcode, o.getNumParams()), input, output);
-            pc += 1 + o.getNumParams();
+        o.execute(parseParams(opcode, o.getNumParams()), input, output);
+        pc += 1 + o.getNumParams();
+    }
+
+    public Integer runUntilOutputAndYield() {
+        var startOutputSize = output.size();
+        while (startOutputSize == output.size()) {
+            step();
+            if (terminated) {
+                return null;
+            }
         }
+        if (startOutputSize + 1 != output.size()) {
+            throw new IllegalStateException();
+        }
+        return output.get(startOutputSize);
     }
 
     private List<Param> parseParams(int opcode, int numParams) {

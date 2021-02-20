@@ -3,6 +3,7 @@ package mpsrig.prev_year;
 import mpsrig.Runner;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -36,6 +37,33 @@ public class Day7 extends Runner.Computation {
         return signal;
     }
 
+    private int runAmplifierChainPart2(int[] phaseSettings) {
+        if (phaseSettings.length != 5) {
+            throw new IllegalArgumentException();
+        }
+        var amps = new IntcodeComputer[phaseSettings.length];
+        for (int i = 0; i < phaseSettings.length; i++) {
+            amps[i] = new IntcodeComputer(parsedProgram, Collections.singletonList(phaseSettings[i]));
+        }
+
+        int currIdx = 0;
+        int value = 0;
+        while (true) {
+            var a = amps[currIdx];
+            a.addInput(value);
+            var out = a.runUntilOutputAndYield();
+            if (out == null) {
+                var lastAmpOutputs = amps[amps.length - 1].getOutput();
+                return lastAmpOutputs.get(lastAmpOutputs.size() - 1);
+            }
+            value = out;
+            currIdx++;
+            if (currIdx == amps.length) {
+                currIdx = 0;
+            }
+        }
+    }
+
     // Heap's Algorithm
     public static void permutate(int[] list, int n, Consumer<int[]> consumer) {
         if (n == 1) {
@@ -62,6 +90,8 @@ public class Day7 extends Runner.Computation {
 
     @Override
     public Object computePart2() {
-        return null;
+        AtomicInteger maximumOutput = new AtomicInteger();
+        permutate(new int[]{5, 6, 7, 8, 9}, 5, x -> maximumOutput.set(Math.max(maximumOutput.get(), runAmplifierChainPart2(x))));
+        return maximumOutput.get();
     }
 }
