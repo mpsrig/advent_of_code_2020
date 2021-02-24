@@ -1,8 +1,10 @@
 package mpsrig.prev_year;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class IntcodeComputer {
+
     private interface Param {
         long read();
 
@@ -124,7 +126,7 @@ public class IntcodeComputer {
         OPERATIONS_MAP.put(3, new Operation(1) {
             @Override
             public void execute(List<Param> params, IntcodeComputer computer) {
-                params.get(0).write(computer.input.remove());
+                params.get(0).write(computer.consumeInput());
             }
         });
 
@@ -185,6 +187,7 @@ public class IntcodeComputer {
 
     private final ArrayList<Long> memory;
     private final ArrayDeque<Long> input;
+    private Supplier<Long> inputSupplier;
     private int pc = 0;
     private final ArrayList<Long> output = new ArrayList<>();
     private boolean terminated = false;
@@ -193,6 +196,17 @@ public class IntcodeComputer {
     public IntcodeComputer(List<Long> memory, List<Long> input) {
         this.memory = new ArrayList<>(memory);
         this.input = new ArrayDeque<>(input);
+    }
+
+    public void registerInputSupplier(Supplier<Long> s) {
+        inputSupplier = s;
+    }
+
+    private long consumeInput() {
+        if (inputSupplier != null && input.isEmpty()) {
+            return inputSupplier.get();
+        }
+        return input.remove();
     }
 
     public List<Long> getMemory() {
