@@ -4,10 +4,9 @@ import mpsrig.Runner;
 
 import javax.swing.*;
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Day13 extends Runner.Computation {
     public static void main(String[] args) {
@@ -103,8 +102,7 @@ public class Day13 extends Runner.Computation {
     public Object computePart2() {
         var displayGrid = new int[displayHeight][displayWidth];
 
-        var tw = new TextWindow();
-        tw.init(displayHeight + 2, displayWidth);
+        var tw = new TextWindow(displayHeight + 2, displayWidth);
         sleep(500);
 
         var program = new ArrayList<>(parsedProgram);
@@ -162,6 +160,7 @@ public class Day13 extends Runner.Computation {
             tw.setString(renderGrid(displayGrid).append("\nScore: ").append(score).toString());
             sleep(1);
         }
+        sleep(100);
         return score;
     }
 
@@ -169,21 +168,18 @@ public class Day13 extends Runner.Computation {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            throw new IllegalStateException(e);
+            throw new Error(e);
         }
     }
 
     private static class TextWindow {
         private JTextArea textArea;
 
-        void init(int rows, int cols) {
-            var notifier = new Object() {
-                boolean complete = false;
-            };
-
-            SwingUtilities.invokeLater(() -> {
+        TextWindow(int rows, int cols) {
+            invokeAndWait(() -> {
                 //Create and set up the window.
                 var frame = new JFrame("TextWindow");
+                frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
                 textArea = new JTextArea(rows, cols);
                 textArea.setEditable(false);
@@ -195,35 +191,24 @@ public class Day13 extends Runner.Computation {
                 //Display the window.
                 frame.pack();
                 frame.setVisible(true);
-
-                synchronized (notifier) {
-                    notifier.complete = true;
-                    notifier.notifyAll();
-                }
             });
-
-            try {
-                synchronized (notifier) {
-                    while (!notifier.complete) {
-                        notifier.wait();
-                    }
-                }
-            } catch (InterruptedException e) {
-                throw new IllegalStateException(e);
-            }
         }
 
         void setString(String content) {
-            SwingUtilities.invokeLater(() -> textArea.setText(content));
+            invokeAndWait(() -> textArea.setText(content));
         }
 
-//        public static void main(String[] args) throws InterruptedException {
-//            var tw = new TextWindow();
-//            tw.init(20, 20);
-//            for (int i = 0; i < 100; i++) {
-//                Thread.sleep(1000);
-//                tw.setString("i = " + i);
-//            }
-//        }
+        private static void invokeAndWait(final Runnable r) {
+            try {
+                SwingUtilities.invokeAndWait(r);
+            } catch (InterruptedException e) {
+                throw new Error(e);
+            } catch (InvocationTargetException e) {
+                if (e.getCause() instanceof RuntimeException) {
+                    throw (RuntimeException) e.getCause();
+                }
+                throw new Error(e);
+            }
+        }
     }
 }
