@@ -27,6 +27,13 @@ public class Day14 extends Runner.Computation {
 
     @Override
     public Object computePart2() {
+        var m = new MutableReaction();
+        m.process();
+
+        var many = new ManyReactions();
+        many.processOptimizedEquation(m);
+
+        System.err.println(many);
         return null;
     }
 
@@ -184,6 +191,43 @@ public class Day14 extends Runner.Computation {
         
         private void debug() {
 //            System.err.println(this);
+        }
+    }
+
+    class ManyReactions {
+        Map<String, Long> availableResources = new HashMap<>();
+
+        ManyReactions() {
+            availableResources.put("ORE", 1000000000000L);
+        }
+
+        void processOptimizedEquation(MutableReaction m) {
+            var chem = "ORE";
+            if (m.neededInputs.size() != 1 || !m.neededInputs.containsKey(chem)) {
+                throw new IllegalStateException("Unoptimized m: " + m);
+            }
+            var oreInput = m.neededInputs.get(chem);
+            long currentOreAvailable = availableResources.get(chem);
+            long floorMultiple = availableResources.get(chem) / oreInput;
+
+            long newOreAvailable = currentOreAvailable - (floorMultiple * oreInput);
+            if (newOreAvailable == 0) {
+                availableResources.remove(chem);
+            } else {
+                availableResources.put(chem, newOreAvailable);
+            }
+
+            for (var elem : m.availableOutputs.entrySet()) {
+                availableResources.put(elem.getKey(),
+                        (floorMultiple * elem.getValue()) + availableResources.getOrDefault(chem, 0L));
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "ManyReactions{" +
+                    "availableResources=" + availableResources +
+                    '}';
         }
     }
 }
