@@ -46,14 +46,14 @@ public class Day14 extends Runner.Computation {
         if (parts.length != 2) {
             throw new IllegalArgumentException("Could not parse term " + t);
         }
-        return new Term(Integer.parseInt(parts[0]), parts[1]);
+        return new Term(Long.parseLong(parts[0]), parts[1]);
     }
 
     static class Term {
-        final int n;
+        final long n;
         final String chemical;
 
-        Term(int n, String chemical) {
+        Term(long n, String chemical) {
             this.n = n;
             this.chemical = chemical;
         }
@@ -84,8 +84,8 @@ public class Day14 extends Runner.Computation {
     Map<String, Equation> reactionLookup;
 
     class MutableReaction {
-        Map<String, Integer> neededInputs = new HashMap<>();
-        Map<String, Integer> availableOutputs = new HashMap<>();
+        Map<String, Long> neededInputs = new HashMap<>();
+        Map<String, Long> availableOutputs = new HashMap<>();
 
         MutableReaction() {
             var e = reactionLookup.get("FUEL");
@@ -101,9 +101,9 @@ public class Day14 extends Runner.Computation {
 
                 var avail = availableOutputs.get(elem.getKey());
                 if (avail != null) {
-                    int delta = Math.min(elem.getValue(), avail);
-                    int newAvail = avail - delta;
-                    int newNeeded = elem.getValue() - delta;
+                    long delta = Math.min(elem.getValue(), avail);
+                    long newAvail = avail - delta;
+                    long newNeeded = elem.getValue() - delta;
 
                     if (newNeeded == 0) {
                         iterator.remove();
@@ -149,17 +149,18 @@ public class Day14 extends Runner.Computation {
             int multiplier = (int) Math.ceil(((double) neededQty) / equation.output.n);
 
             for (var input : equation.input) {
-                int currentNeeded = neededInputs.getOrDefault(input.chemical, 0);
-                int newNeeded = currentNeeded + multiplier * input.n;
+                long currentNeeded = neededInputs.getOrDefault(input.chemical, 0L);
+                long newNeeded = currentNeeded + multiplier * input.n;
                 neededInputs.put(input.chemical, newNeeded);
             }
 
             if (availableOutputs.containsKey(chem)) {
                 throw new IllegalStateException("Simplify failed");
             }
-            int spareOutput = (multiplier * equation.output.n) - neededQty;
-            if (spareOutput != 0)
-            availableOutputs.put(chem, spareOutput);
+            long spareOutput = (multiplier * equation.output.n) - neededQty;
+            if (spareOutput != 0) {
+                availableOutputs.put(chem, spareOutput);
+            }
             debug();
         }
 
